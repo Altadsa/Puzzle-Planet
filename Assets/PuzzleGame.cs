@@ -5,14 +5,15 @@ using System.Collections.Generic;
 
 public class PuzzleGame : MonoBehaviour
 {
-    public Texture2D texture;
-    Sprite[] puzzleImage;
+    Texture2D texture;
     public GameObject piecePrefab;
 
+    Sprite[] puzzleImage;
     GraphicRaycaster raycaster;
 
-    PuzzlePiece selectedPiece;
+    PuzzlePiece selectedPiece, pieceToSwap;
 
+    [HideInInspector]
     public int piecesLeftToSolve;
 
     private void Awake()
@@ -20,7 +21,13 @@ public class PuzzleGame : MonoBehaviour
         raycaster = GetComponent<GraphicRaycaster>();
     }
 
-    void Start()
+    public void SelectImageAndStart(Texture2D textureToSet)
+    {
+        texture = textureToSet;
+        StartGame();
+    }
+
+    private void StartGame()
     {
         SetupPuzzle();
         ShufflePuzzle();
@@ -43,7 +50,6 @@ public class PuzzleGame : MonoBehaviour
 
     private void ShufflePuzzle()
     {
-
         foreach (Transform piece in transform)
         {
             int rNum = Random.Range(0, transform.childCount - 1);
@@ -52,8 +58,9 @@ public class PuzzleGame : MonoBehaviour
 
         foreach (Transform piece in transform)
         {
-            piece.GetComponent<PuzzlePiece>().currentPos = piece.transform.GetSiblingIndex();
-            piece.GetComponent<PuzzlePiece>().CheckIfInPosition();
+            PuzzlePiece pPiece = piece.GetComponent<PuzzlePiece>();
+            pPiece.currentPos = piece.transform.GetSiblingIndex();
+            pPiece.CheckIfInPosition();
         }
     }
 
@@ -63,55 +70,84 @@ public class PuzzleGame : MonoBehaviour
         {
             CheckIfTouchingPiece();
         }
+    }
+
+    private void CheckIfPuzzleIfSolved()
+    {
         if (piecesLeftToSolve == 0)
         {
-            Destroy(gameObject);
+            gameObject.SetActive(false);
         }
-        Debug.Log("Solves left:" + piecesLeftToSolve);
     }
 
     private void CheckIfTouchingPiece()
     {
-
         if (selectedPiece)
         {
-            PuzzlePiece pieceToSwap = RaycastForPiece();
-            if (pieceToSwap == selectedPiece)
-            {
-                selectedPiece.UnmarkSelected();
-                selectedPiece = null;
-                return;
-            }
-            else
-            {
-                if (selectedPiece && pieceToSwap)
-                {
-                    SwapPieces(selectedPiece, pieceToSwap);
-                    selectedPiece.UnmarkSelected();
-                    selectedPiece = null;
-                    pieceToSwap = null;
-                }
-            }
+            SelectPieceAndSwap();
         }
         else
         {
-            if (RaycastForPiece().canBeSelected)
-            {
-                selectedPiece = RaycastForPiece();
-                selectedPiece.MarkSelected();
-            }
+            SelectPieceIfSelectable();
+        }
+        CheckIfPuzzleIfSolved();
+    }
+
+    private void SelectPieceAndSwap()
+    {
+        pieceToSwap = RaycastForPiece();
+        if (pieceToSwap == selectedPiece)
+        {
+            DeselectPieces();
+        }
+        else
+        {
+            SwapAndCheckPieces();
         }
     }
 
-    private void SwapPieces(PuzzlePiece a, PuzzlePiece b)
+    private void SelectPieceIfSelectable()
     {
-        int temp = a.transform.GetSiblingIndex();
-        a.transform.SetSiblingIndex(b.transform.GetSiblingIndex());
-        b.transform.SetSiblingIndex(temp);
-        a.CheckIfInPosition();
-        b.CheckIfInPosition();
+        if (RaycastForPiece().canBeSelected)
+        {
+            selectedPiece = RaycastForPiece();
+            selectedPiece.MarkSelected();
+        }
+    }
+
+    private void SwapAndCheckPieces()
+    {
+        if (selectedPiece && pieceToSwap.canBeSelected)
+        {
+            SwapPieces();
+            CheckPieces();
+            DeselectPieces();
+        }
+        else
+        {
+            DeselectPieces();
+        }
+    }
+
+    private void SwapPieces()
+    {
+        int temp = selectedPiece.transform.GetSiblingIndex();
+        selectedPiece.transform.SetSiblingIndex(pieceToSwap.transform.GetSiblingIndex());
+        pieceToSwap.transform.SetSiblingIndex(temp);
     }
  
+    private void CheckPieces()
+    {
+        selectedPiece.CheckIfInPosition();
+        pieceToSwap.CheckIfInPosition();
+    }
+
+    private void DeselectPieces()
+    {
+        selectedPiece.UnmarkSelected();
+        selectedPiece = null;
+        pieceToSwap = null;
+    }
 
     PuzzlePiece RaycastForPiece()
     {

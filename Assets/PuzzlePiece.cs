@@ -33,7 +33,6 @@ public class PuzzlePiece : MonoBehaviour
     public void CheckIfInPosition()
     {
         currentPos = transform.GetSiblingIndex();
-        Debug.Log(string.Format("Start Pos: {0} Current Pos: {1}", startPos, currentPos));
         if (currentPos == startPos)
         {
             canBeSelected = false;
