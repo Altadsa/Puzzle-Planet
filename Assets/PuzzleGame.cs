@@ -2,6 +2,8 @@
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using System.Collections.Generic;
+using System.Collections;
+using DigitalRuby.Tween;
 
 public class PuzzleGame : MonoBehaviour
 {
@@ -15,6 +17,8 @@ public class PuzzleGame : MonoBehaviour
 
     [HideInInspector]
     public int piecesLeftToSolve;
+
+    bool isGameReady = false;
 
     private void Awake()
     {
@@ -50,22 +54,15 @@ public class PuzzleGame : MonoBehaviour
 
     private void ShufflePuzzle()
     {
-        foreach (Transform piece in transform)
+        if (gameObject.activeInHierarchy)
         {
-            int rNum = Random.Range(0, transform.childCount - 1);
-            piece.SetSiblingIndex(rNum);       
-        }
-
-        foreach (Transform piece in transform)
-        {
-            PuzzlePiece pPiece = piece.GetComponent<PuzzlePiece>();
-            pPiece.currentPos = piece.transform.GetSiblingIndex();
-            pPiece.CheckIfInPosition();
+            StartCoroutine("Shuffle"); 
         }
     }
 
     void Update()
     {
+        if (!isGameReady) { return; }
         if (Input.GetMouseButtonDown(0))
         {
             CheckIfTouchingPiece();
@@ -164,4 +161,23 @@ public class PuzzleGame : MonoBehaviour
         }
         return selectedPiece;
     }
+
+    IEnumerator Shuffle()
+    {
+        yield return new WaitForSeconds(2);
+        foreach (Transform piece in transform)
+        {
+            int rNum = Random.Range(0, transform.childCount - 1);
+            piece.SetSiblingIndex(rNum);
+            yield return new WaitForSeconds(0.1f);
+        }
+        foreach (Transform piece in transform)
+        {
+            PuzzlePiece pPiece = piece.GetComponent<PuzzlePiece>();
+            pPiece.currentPos = piece.transform.GetSiblingIndex();
+            pPiece.CheckIfInPosition();
+        }
+        isGameReady = true;
+    }
+
 }
